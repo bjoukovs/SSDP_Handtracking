@@ -32,11 +32,9 @@ class Camstream(Thread):
         while(self.isRunning):
 
             if self.videoStream.availableImage():
-                
-                a=time.time()
                 self.camFrame.updateImage(self.videoStream.getAvailableImage())
-                #time.sleep(0.05)
-                print(time.time()-a)
+            else:
+                time.sleep(0.001)
 
             
 
@@ -52,6 +50,7 @@ class VideoStream(Thread):
     def __init__(self):
         self.isRunning = False
         self.image = None
+        self.available = False
 
         #initializing video, 100x100
         self.cam = VideoCapture(0)
@@ -62,13 +61,15 @@ class VideoStream(Thread):
         self.startThread()
 
     def getAvailableImage(self):
-        return self.image
+        if self.available:
+            self.available = False
+            return self.image
+        else:
+            return None
+        
 
     def availableImage(self):
-        if self.image is not None:
-            return True
-        else:
-            return False
+        return self.available
 
 
 
@@ -90,7 +91,10 @@ class VideoStream(Thread):
 
             if s:
                 self.image = img
+                self.available = True
                 waitKey(1)
+            else:
+                time.sleep(0.0005)
 
     def closeStream(self):
         self.isRunning = False

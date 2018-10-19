@@ -5,9 +5,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Rectangle
 import matplotlib.pyplot as plt
 import cv2
-from Handmatcher import Handmatcher
+from MatchFilter import MatchFilter
 import numpy as np
 import time
+from threading import Thread
 
 class Camview(Frame):
 
@@ -27,13 +28,15 @@ class Camview(Frame):
         self.frames = 0
         self.dtreshold = 0
 
-        #Initialize handmatcher
-        self.handmatcher = Handmatcher()
+        #Initialize matchfilter
+        self.matchfilter = MatchFilter()
 
         #initialize camera
         self.running = True
-
         self.camstream = Camstream(self)
+
+        #initialize draw thread
+        self.camviewThread = CamviewThread(self.imPlot, self.imPlot2, self.imCanvas)
 
         
 
@@ -55,14 +58,9 @@ class Camview(Frame):
         res, img = cv2.threshold(img, np.max(img)/3, np.max(img),cv2.THRESH_TOZERO)
         img = img.astype(np.float32)
 
-        #plotting image
-        self.imPlot.clear()
-        self.imPlot.imshow(img_backup, interpolation=None)
-
 
         #plotting matching map
-        self.imPlot2.clear()
-        correlated = self.handmatcher.correlate(img)
+        correlated = self.matchfilter.correlate(img)
 
         in_val, max_val, min_loc, max_loc = cv2.minMaxLoc(correlated)
         rect2 = Rectangle(max_loc,5,5,linewidth=1,edgecolor='r',facecolor='none')
@@ -72,13 +70,76 @@ class Camview(Frame):
             self.dtreshold += max_val/10
         else:
             res, thr = cv2.threshold(correlated,self.dtreshold*0.9,max_val,cv2.THRESH_TOZERO)
-            self.imPlot2.imshow(thr, interpolation=None)
             self.imPlot2.add_patch(rect2)
 
+            #Update plots
+            self.camviewThread.setImages(img_backup, thr)
 
-        self.imPlot2.axis("off")
-        self.imPlot.axis("off")
-        self.imCanvas.draw()
 
     def closeCam(self):
         self.camstream.closeStream()
+
+
+
+
+
+class CamviewThread(Thread):
+
+    def __init__(self, sourcePlot, outputPlot, canvas):
+        self.sourcePlot = sourcePlot
+        self.outputPlot = outputPlot
+        self.isRunning = False
+        self.canvas = canvas
+
+        self.sourceImage = None
+        self.outImage = None
+
+        self.startThread()
+
+    def startThread(self):
+
+        #Initializing thread
+        Thread.__init__(self)
+
+        self.framesDrawn = 0
+        self.lastTime = 0
+
+        #Close thread when exiting program
+        self.setDaemon(True)
+
+        #Starting Thread
+        self.isRunning = True
+        self.lastTime = time.time()
+        self.start()
+
+    def setImages(self, source, out):
+        self.sourceImage = source
+        self.outImage = out
+        self.framesDrawn += 1
+
+
+    def run(self):
+        while (self.isRunning):
+            if (self.sourceImage is not None):
+                self.sourcePlot.clear()
+                self.sourcePlot.imshow(self.sourceImage, interpolation=None)
+                self.sourcePlot.axis('off')
+
+            if (self.outImage is not None):
+                self.outputPlot.clear()
+                self.outputPlot.imshow(self.outImage, interpolation=None)
+                self.outputPlot.axis('off')
+
+            self.canvas.draw()
+
+            now = time.time()
+            fps = 1/(now-self.lastTime)
+            print("PROCESSED FPS : {:d}     GUI FPS : {:d}".format(int(fps*self.framesDrawn), int(fps)))
+            self.framesDrawn = 0
+            self.lastTime = now
+
+            time.sleep(0.001)
+            
+
+            
+                

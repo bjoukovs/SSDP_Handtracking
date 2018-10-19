@@ -13,7 +13,7 @@ class GUI(Frame):
 
         #Initialize main window
         root.geometry('800x600')
-        self.master.title("Hand Tracker")
+        self.master.title("Tracker")
 
         #Setup this frame 
         self.pack(fill=BOTH, expand=1)
@@ -29,3 +29,4 @@ class GUI(Frame):
         exiting.set()
 
 
+GUI()

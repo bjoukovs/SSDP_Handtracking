@@ -21,8 +21,8 @@ class MatchFilter():
         self.target = cv2.Laplacian(self.target, cv2.CV_8U)
         self.target = self.target.astype(np.float32)
 
-        plt.imshow(self.target)
-        plt.show()
+        #plt.imshow(self.target)
+        #plt.show()
         print(self.target.shape)
 
         #self.rh1_ft = np.fft.fft2(self.righthand1)

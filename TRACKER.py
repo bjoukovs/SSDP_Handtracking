@@ -1,10 +1,11 @@
 from tkinter import *
 from Camview import Camview
 import threading
+from Kalman import IMM
 
 class GUI(Frame):
 
-    def __init__(self):
+    def __init__(self, filter):
         root = Tk()
         super().__init__(root)
 
@@ -19,7 +20,7 @@ class GUI(Frame):
         self.pack(fill=BOTH, expand=1)
 
         #Initialize components
-        self.cam_view = Camview(self)
+        self.cam_view = Camview(self, filter)
 
         #Running Window
         root.mainloop()
@@ -29,4 +30,7 @@ class GUI(Frame):
         exiting.set()
 
 
-GUI()
+
+#Setting the filter to use
+filter = IMM()
+GUI(filter)

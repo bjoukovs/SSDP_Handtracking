@@ -9,10 +9,12 @@ from MatchFilter import MatchFilter
 import numpy as np
 import time
 from threading import Thread
+from TargetFinder import TargetFinder
+from Kalman import IMM
 
 class Camview(Frame):
 
-    def __init__(self, mainFrame):
+    def __init__(self, mainFrame, filter):
         super().__init__(mainFrame)
 
         self.pack(side = LEFT)
@@ -28,8 +30,14 @@ class Camview(Frame):
         self.frames = 0
         self.dtreshold = 0
 
+        #set filter (particle, kalman)
+        self.filter = filter
+
         #Initialize matchfilter
         self.matchfilter = MatchFilter()
+
+        #Initialize targetFinder
+        self.targetFinder = TargetFinder()
 
         #initialize camera
         self.running = True
@@ -37,11 +45,10 @@ class Camview(Frame):
 
         #initialize draw thread
         self.camviewThread = CamviewThread(self.imPlot, self.imPlot2, self.imCanvas)
-
         
 
 
-    def updateImage(self, img):
+    def updateImage(self, img, delta):
 
         #converting image to grayscale (image is uint8)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -61,16 +68,28 @@ class Camview(Frame):
 
         #plotting matching map
         correlated = self.matchfilter.correlate(img)
-
         in_val, max_val, min_loc, max_loc = cv2.minMaxLoc(correlated)
-        rect2 = Rectangle(max_loc,5,5,linewidth=1,edgecolor='r',facecolor='none')
+        #rect2 = Rectangle((x,y),5,5,linewidth=1,edgecolor='r',facecolor='none')
 
         if self.frames<10:
+            #First frames serves as initialization of the detection threshold
             self.frames+=1
             self.dtreshold += max_val/10
         else:
+
+            #Thresholding the detection map
             res, thr = cv2.threshold(correlated,self.dtreshold*0.9,max_val,cv2.THRESH_TOZERO)
+
+            #Finding the target
+            x,y = self.targetFinder.findTarget(thr)
+            rect2 = Rectangle((x,y),5,5,linewidth=1,edgecolor='r',facecolor='none')
             self.imPlot2.add_patch(rect2)
+
+            #Apply filtering
+            nx, ny = self.filter.compute(x,y, delta)
+
+            rect3 = Rectangle((nx,ny),5,5,linewidth=1,edgecolor='b',facecolor='none')
+            self.imPlot2.add_patch(rect3)
 
             #Update plots
             self.camviewThread.setImages(img_backup, thr)
@@ -134,7 +153,7 @@ class CamviewThread(Thread):
 
             now = time.time()
             fps = 1/(now-self.lastTime)
-            print("PROCESSED FPS : {:d}     GUI FPS : {:d}".format(int(fps*self.framesDrawn), int(fps)))
+            #print("PROCESSED FPS : {:d}     GUI FPS : {:d}".format(int(fps*self.framesDrawn), int(fps)))
             self.framesDrawn = 0
             self.lastTime = now
 

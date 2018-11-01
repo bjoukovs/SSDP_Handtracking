@@ -8,6 +8,7 @@ class Camstream(Thread):
     def __init__(self, camFrame):
         self.isRunning = False
         self.camFrame = camFrame
+        self.timer = 0
 
         #Initializing video stream
         self.videoStream = VideoStream()
@@ -29,10 +30,17 @@ class Camstream(Thread):
 
 
     def run(self):
+        
+        self.timer = time.time()
+
         while(self.isRunning):
 
             if self.videoStream.availableImage():
-                self.camFrame.updateImage(self.videoStream.getAvailableImage())
+                now = time.time()
+                delta = now - self.timer
+                self.timer = now
+
+                self.camFrame.updateImage(self.videoStream.getAvailableImage(), delta)
             else:
                 time.sleep(0.001)
 

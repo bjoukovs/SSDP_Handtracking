@@ -43,7 +43,7 @@ def ctr(x, delta):
             [0, 0, 0, 0, 1]])
 
     G = np.matrix([[delta**2/2*sin(theta_est), delta*cos(theta_est)],  \
-            [delta**2/2*cos(heta_est), delta*sin(theta_est)],  \
+            [delta**2/2*cos(theta_est), delta*sin(theta_est)],  \
             [delta**2/2, 0],  \
             [delta, 0],  \
             [0, delta]])

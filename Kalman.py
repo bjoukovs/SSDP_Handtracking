@@ -12,7 +12,7 @@ def predict(s, Q, model, delta):
         QW = CVS_QW
 
     if model == MODEL_CTR:
-        F,G = LinearModels.cvs(s, delta)
+        F,G = LinearModels.ctr(s, delta)
         QW = CTR_QW
         
 
@@ -34,8 +34,7 @@ def update(s, z, Q, model, delta):
         QN = CTR_QN
 
     #Kalman gain
-    print(matmul(QN, H.transpose()))
-    K = matmul(Q, matmul(   H.transpose(), np.linalg.inv(   matmul(H, matmul(QN, H.transpose()))  +  QN   )   ))
+    K = matmul(Q, matmul(   H.transpose(), np.linalg.inv(   matmul(H, matmul(Q, H.transpose()))  +  QN   )   ))
 
     s = s + matmul(K, z - matmul(H, s))
     Q = Q - matmul(K, matmul(H, Q))
@@ -49,18 +48,18 @@ class IMM:
 
     def __init__(self):
 
-        self.s = np.zeros((4,1))
-        self.Q = np.eye(4)
+        self.s = np.zeros((5,1))
+        self.Q = np.eye(5)
 
     def compute(self, x, y, delta):
         #Function called when new measurement received
         z = np.matrix([[x], [y]])
 
         #prediction
-        s, Q = predict(self.s, self.Q, MODEL_CVS, delta)
-        s, Q = update(s, z, Q, MODEL_CVS, delta)
+        s, Q = predict(self.s, self.Q, MODEL_CTR, delta)
+        s, Q = update(s, z, Q, MODEL_CTR, delta)
 
         self.s = s
         self.Q = Q
 
-        return s[0][0], s[1][0]
+        return s

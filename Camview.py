@@ -2,7 +2,7 @@ from tkinter import *
 from Camstream import Camstream
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Rectangle, Circle
 import matplotlib.pyplot as plt
 import cv2
 from MatchFilter import MatchFilter
@@ -11,6 +11,7 @@ import time
 from threading import Thread
 from TargetFinder import TargetFinder
 from Kalman import IMM
+from math import sin, cos
 
 class Camview(Frame):
 
@@ -86,10 +87,16 @@ class Camview(Frame):
             self.imPlot2.add_patch(rect2)
 
             #Apply filtering
-            nx, ny = self.filter.compute(x,y, delta)
+            s = self.filter.compute(x,y, delta)
 
-            rect3 = Rectangle((nx,ny),5,5,linewidth=1,edgecolor='b',facecolor='none')
+            rect3 = Rectangle((s[0][0], s[1][0]),5,5,linewidth=1,edgecolor='b',facecolor='none')
+            nx = s[0][0]
+            ny = s[1][0]
+            r = s[4][0]
+            theta = s[2][0]
+            circle = Circle((nx - r*cos(theta), ny - r*sin(theta)), radius = r, linewidth=1, edgecolor='b', facecolor='none')
             self.imPlot2.add_patch(rect3)
+            self.imPlot2.add_patch(circle)
 
             #Update plots
             self.camviewThread.setImages(img_backup, thr)

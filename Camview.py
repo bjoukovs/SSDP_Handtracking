@@ -30,6 +30,7 @@ class Camview(Frame):
         #detection settings
         self.frames = 0
         self.dtreshold = 0
+        self.voidPrior = None
 
         #set filter (particle, kalman)
         self.filter = filter
@@ -76,6 +77,17 @@ class Camview(Frame):
             #First frames serves as initialization of the detection threshold
             self.frames+=1
             self.dtreshold += max_val/10
+
+            if self.voidPrior is None:
+                self.voidPrior = correlated
+            else:
+                self.voidPrior += correlated
+
+            if self.frames == 10:
+                #self.voidPrior /= 10
+                #minv, maxv, minloc, maxloc = cv2.minMaxLoc(source)
+                pass
+
         else:
 
             #Thresholding the detection map

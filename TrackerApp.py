@@ -31,7 +31,9 @@ class TrackerApp(Frame):
         self.outFigure.get_axes()[0].get_yaxis().set_visible(False) 
         self.outPlot.axis('off')
 
-        self.infoLabel = self.outPlot.text(0.05,0.95,"Initializaing...")
+        self.infoLabel = self.outPlot.text(0.05,0.9,"Label")
+
+        self.infoLabelText = "Initializing..."
 
         #initialize matplotlib figure for image
         self.imFigure = Figure(figsize=(8,2), dpi=100)
@@ -59,7 +61,7 @@ class TrackerApp(Frame):
         self.camstream = Camstream(self)
 
         #initialize draw thread
-        self.TrackerAppThread = TrackerAppThread(self.imPlot, self.imPlot2, self.imCanvas)
+        self.trackerAppThread = TrackerAppThread(self.imPlot, self.imPlot2, self.imCanvas, self.outCanvas ,self.infoLabel)
         
 
 
@@ -113,7 +115,9 @@ class TrackerApp(Frame):
 
 
             #Apply filtering
-            #s = self.filter.compute(x,y, delta)
+            s, p = self.filter.compute(x,y, delta)
+
+            self.trackerAppThread.setInfoText(np.array2string(p))
 
             #rect3 = Rectangle((s[0][0], s[1][0]),5,5,linewidth=1,edgecolor='b',facecolor='none')
             #nx = s[0][0]
@@ -123,9 +127,10 @@ class TrackerApp(Frame):
             #circle = Circle((nx - r*cos(theta), ny - r*sin(theta)), radius = r, linewidth=1, edgecolor='b', facecolor='none')
             #self.imPlot2.add_patch(rect3)
             #self.imPlot2.add_patch(circle)
+            
 
             #Update plots
-            self.TrackerAppThread.setImages(img_backup, thr)
+            self.trackerAppThread.setImages(img_backup, thr)
 
 
     def closeCam(self):
@@ -137,11 +142,15 @@ class TrackerApp(Frame):
 
 class TrackerAppThread(Thread):
 
-    def __init__(self, sourcePlot, outputPlot, canvas):
+    def __init__(self, sourcePlot, outputPlot, canvas, outCanvas, label):
         self.sourcePlot = sourcePlot
         self.outputPlot = outputPlot
         self.isRunning = False
         self.canvas = canvas
+        self.label = label
+        self.outCanvas = outCanvas
+        
+        self.infoText = "Init..."
 
         self.sourceImage = None
         self.outImage = None
@@ -169,6 +178,9 @@ class TrackerAppThread(Thread):
         self.outImage = out
         self.framesDrawn += 1
 
+    def setInfoText(self, txt):
+        self.infoText = txt
+
 
     def run(self):
         while (self.isRunning):
@@ -183,6 +195,9 @@ class TrackerAppThread(Thread):
                 self.outputPlot.axis('off')
 
             self.canvas.draw()
+
+            self.label.set_text(self.infoText)
+            self.outCanvas.draw()
 
             now = time.time()
             fps = 1/(now-self.lastTime)

@@ -2,6 +2,8 @@ import LinearModels
 from Constants import *
 from numpy import matmul
 import numpy as np
+from math import pi, sqrt
+from numpy import exp
 
 
 def predict(s, Q, model, delta):
@@ -41,12 +43,23 @@ def update(s, z, Q, model, delta):
         QN = VOID_QN
 
     #Kalman gain
-    K = matmul(Q, matmul(   H.transpose(), np.linalg.inv(   matmul(H, matmul(Q, H.transpose()))  +  QN   )   ))
+    V = matmul(H, matmul(Q, H.transpose()))  +  QN
+    Vinv = np.linalg.inv(V)
 
-    s2 = s + matmul(K, z - matmul(H, s))
+    K = matmul(Q, matmul(H.transpose(), Vinv))
+
+    # s and Q update
+    zp = matmul(H,s)
+    z_tilde = z-zp
+    s2 = s + matmul(K, z_tilde)
     Q2 = Q - matmul(K, matmul(H, Q))
 
-    return s2, Q2
+    #Computing model log-likelihood
+    n = max(z.shape)
+    l  = np.log( 1/sqrt((2*pi)**n * np.linalg.det(V)) ) +   matmul(   -0.5 * z_tilde.transpose(), matmul(Vinv, z_tilde) )
+
+    return s2, Q2, l
+
 
 
 
@@ -73,7 +86,7 @@ class IMM:
         self.covariances.append(np.eye(5))
 
         # Likelihoods
-        self.likelihoods = np.zeros((3,1))
+        self.likelihoods = np.ones((3,1))
 
         self.p = np.ones((self.nModels, 1))/self.nModels
 
@@ -98,10 +111,15 @@ class IMM:
             self.states[i] = np.asarray(s)
             self.covariances[i] = np.asarray(Q)
             self.likelihoods[i] = l
+            
 
-        #MODEL PROBABILITY
-        self.p = self.likelihoods*pm
-        self.p /= np.sum(self.p)
+        self.p = self.likelihoods + np.log(pm)
+        self.p = self.p - np.max(self.p)*np.ones(self.p.shape)
+        for i in range(self.nModels):
+            if self.p[i] < -20:
+                self.p[i] = -20
+        self.p = np.exp(self.p) #converting back to likelihoods
+        self.p = (1/np.sum(self.p))*self.p #normalizing
 
         #prediction
         #s, Q = predict(self.s, self.Q, MODEL_CTR, delta)
@@ -110,9 +128,9 @@ class IMM:
         #self.s = s
         #self.Q = Q
 
-        print(pm)
+        return self.states, self.p
 
-        return s
+
 
     def mix(self):
 

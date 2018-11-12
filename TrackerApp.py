@@ -3,6 +3,7 @@ from Camstream import Camstream
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Rectangle, Circle
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import cv2
 from MatchFilter import MatchFilter
@@ -13,19 +14,31 @@ from TargetFinder import TargetFinder
 from Kalman import IMM
 from math import sin, cos
 
-class Camview(Frame):
+class TrackerApp(Frame):
 
     def __init__(self, mainFrame, filter):
         super().__init__(mainFrame)
 
         self.pack(side = LEFT)
 
+        #Initialize output graph
+        self.outFigure = Figure(figsize=(8,6), dpi=100)
+        self.outPlot = self.outFigure.add_axes([0,0,1,1])
+        self.outCanvas = FigureCanvasTkAgg(self.outFigure, self)
+        self.outCanvas.get_tk_widget().pack(side=TOP,fill=BOTH,expand=False)
+
+        self.outFigure.get_axes()[0].get_xaxis().set_visible(False)
+        self.outFigure.get_axes()[0].get_yaxis().set_visible(False) 
+        self.outPlot.axis('off')
+
+        self.infoLabel = self.outPlot.text(0.05,0.95,"Initializaing...")
+
         #initialize matplotlib figure for image
-        self.imFigure = Figure(figsize=(10,5), dpi=100)
+        self.imFigure = Figure(figsize=(8,2), dpi=100)
         self.imPlot = self.imFigure.add_subplot(121)
         self.imPlot2 = self.imFigure.add_subplot(122)
         self.imCanvas = FigureCanvasTkAgg(self.imFigure, self)
-        self.imCanvas.get_tk_widget().pack(side=BOTTOM, fill=BOTH, expand=True)
+        self.imCanvas.get_tk_widget().pack(side=BOTTOM, fill=BOTH, expand=False)
 
         #detection settings
         self.frames = 0
@@ -46,7 +59,7 @@ class Camview(Frame):
         self.camstream = Camstream(self)
 
         #initialize draw thread
-        self.camviewThread = CamviewThread(self.imPlot, self.imPlot2, self.imCanvas)
+        self.TrackerAppThread = TrackerAppThread(self.imPlot, self.imPlot2, self.imCanvas)
         
 
 
@@ -98,20 +111,21 @@ class Camview(Frame):
             rect2 = Rectangle((x,y),5,5,linewidth=1,edgecolor='r',facecolor='none')
             self.imPlot2.add_patch(rect2)
 
-            #Apply filtering
-            s = self.filter.compute(x,y, delta)
 
-            rect3 = Rectangle((s[0][0], s[1][0]),5,5,linewidth=1,edgecolor='b',facecolor='none')
-            nx = s[0][0]
-            ny = s[1][0]
-            r = s[4][0]
-            theta = s[2][0]
-            circle = Circle((nx - r*cos(theta), ny - r*sin(theta)), radius = r, linewidth=1, edgecolor='b', facecolor='none')
-            self.imPlot2.add_patch(rect3)
-            self.imPlot2.add_patch(circle)
+            #Apply filtering
+            #s = self.filter.compute(x,y, delta)
+
+            #rect3 = Rectangle((s[0][0], s[1][0]),5,5,linewidth=1,edgecolor='b',facecolor='none')
+            #nx = s[0][0]
+            #ny = s[1][0]
+            #r = s[4][0]
+            #theta = s[2][0]
+            #circle = Circle((nx - r*cos(theta), ny - r*sin(theta)), radius = r, linewidth=1, edgecolor='b', facecolor='none')
+            #self.imPlot2.add_patch(rect3)
+            #self.imPlot2.add_patch(circle)
 
             #Update plots
-            self.camviewThread.setImages(img_backup, thr)
+            self.TrackerAppThread.setImages(img_backup, thr)
 
 
     def closeCam(self):
@@ -121,7 +135,7 @@ class Camview(Frame):
 
 
 
-class CamviewThread(Thread):
+class TrackerAppThread(Thread):
 
     def __init__(self, sourcePlot, outputPlot, canvas):
         self.sourcePlot = sourcePlot

@@ -99,9 +99,9 @@ class IMM:
             self.covariances[i] = np.asarray(Q)
             self.likelihoods[i] = l
 
-        #UPDATE PROBABILITIES (see imm_upd.m)
-        for i in range(self.nModels):
-            pass
+        #MODEL PROBABILITY
+        self.p = self.likelihoods*pm
+        self.p /= np.sum(self.p)
 
         #prediction
         #s, Q = predict(self.s, self.Q, MODEL_CTR, delta)

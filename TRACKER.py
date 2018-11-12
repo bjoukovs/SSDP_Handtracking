@@ -1,5 +1,5 @@
 from tkinter import *
-from Camview import Camview
+from TrackerApp import TrackerApp
 import threading
 from Kalman import IMM
 
@@ -13,14 +13,14 @@ class GUI(Frame):
         exiting = threading.Event()
 
         #Initialize main window
-        root.geometry('800x600')
+        #root.geometry('1200x800+32+32')
         self.master.title("Tracker")
 
         #Setup this frame 
         self.pack(fill=BOTH, expand=1)
 
         #Initialize components
-        self.cam_view = Camview(self, filter)
+        self.cam_view = TrackerApp(self, filter)
 
         #Running Window
         root.mainloop()

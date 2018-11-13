@@ -43,10 +43,11 @@ def update(s, z, Q, model, delta):
         QN = VOID_QN
 
     #Kalman gain
-    V = matmul(H, matmul(Q, H.transpose()))  +  QN
+    V = matmul(H, matmul(Q, H.transpose())) + QN
     Vinv = np.linalg.inv(V)
 
     K = matmul(Q, matmul(H.transpose(), Vinv))
+
 
     # s and Q update
     zp = matmul(H,s)
@@ -56,7 +57,7 @@ def update(s, z, Q, model, delta):
 
     #Computing model log-likelihood
     n = max(z.shape)
-    l  = np.log( 1/sqrt((2*pi)**n * np.linalg.det(V)) ) +   matmul(   -0.5 * z_tilde.transpose(), matmul(Vinv, z_tilde) )
+    l  = np.log( 1/sqrt((2*pi)**n * np.linalg.det(V)) ) +  matmul(   -0.5 * z_tilde.transpose(), matmul(Vinv, z_tilde) )
 
     return s2, Q2, l
 
@@ -68,26 +69,22 @@ class IMM:
 
     def __init__(self):
 
-        self.s = np.zeros((5,1))
-        self.Q = np.eye(5)
-
         self.nModels = 3
 
+        #States and covariances initialization
         self.states = []
         self.states.append(np.zeros((2,1))) # 0 = VOID
-        self.states.append(np.zeros((4,1))) # 1 = CVS
-        self.states.append(np.zeros((5,1))) # 2 = CTR
-        
 
-        # !! SEE MATLAB FOR CORRECT INITIALIZATION
         self.covariances = []
-        self.covariances.append(np.eye(2))
-        self.covariances.append(np.eye(4))
-        self.covariances.append(np.eye(5))
+        self.covariances.append(np.eye(2)) #0 = VOID
 
-        # Likelihoods
-        self.likelihoods = np.ones((3,1))
+        for i in range(self.nModels-1):
+            s, Q = TRANS_FUNC[0][i+1](self.states[0], self.covariances[0])
+            self.states.append(s)
+            self.covariances.append(Q)
 
+        # Log-Likelihoods
+        self.likelihoods = np.zeros((3,1))
         self.p = np.ones((self.nModels, 1))/self.nModels
 
 
@@ -112,14 +109,11 @@ class IMM:
             self.covariances[i] = np.asarray(Q)
             self.likelihoods[i] = l
             
+        plog = self.likelihoods + np.log(pm)
+        plog = plog - np.max(plog)*np.ones(plog.shape)
 
-        self.p = self.likelihoods + np.log(pm)
-        self.p = self.p - np.max(self.p)*np.ones(self.p.shape)
-        for i in range(self.nModels):
-            if self.p[i] < -20:
-                self.p[i] = -20
-        self.p = np.exp(self.p) #converting back to likelihoods
-        self.p = (1/np.sum(self.p))*self.p #normalizing
+        p = np.exp(plog)
+        self.p = (1/np.sum(p))*p #normalizing
 
         #prediction
         #s, Q = predict(self.s, self.Q, MODEL_CTR, delta)
@@ -148,9 +142,9 @@ class IMM:
                 
                 #Mixing
                 sfm[i] = sfm[i] + s * TRANS[i][j] * self.p[j]
-                Qfm[i] += np.asarray(Q + s * s.transpose()) * TRANS[i][j] * self.p[j]
+                Qfm[i] = Qfm[i] + np.asarray(Q + s * s.transpose()) * TRANS[i][j] * self.p[j]
 
-            sfm[i] /= pm[i]
+            sfm[i] = sfm[i]/pm[i]
             Qfm[i] = Qfm[i]/pm[i] - matmul(sfm[i], sfm[i].transpose())
 
         return sfm, Qfm, pm

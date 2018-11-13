@@ -11,9 +11,10 @@ def cvs(x, delta):
     # delta = Time delay
 
     # State equation
-    F = np.eye(4,4)
-    F[0][2] = delta
-    F[1][3] = delta
+    F = np.matrix([[1, 0, delta, 0], \
+        [0, 1, 0, delta], \
+        [0, 0, 1, 0], \
+        [0, 0, 0, 1]])
 
     #Process noise matrix G
     G = np.matrix([[delta**2/2, 0],  \
@@ -32,9 +33,9 @@ def ctr(x, delta):
     # x = [x y theta omega R]
     # delta = Time delay
 
-    theta_est = x[2]
-    omega_est = x[3]
-    R_est = x[4]
+    theta_est = x[2][0]
+    omega_est = x[3][0]
+    R_est = x[4][0]
     
     F = np.matrix([[1, 0, 0, -R_est*sin(theta_est)*delta, 0], \
             [0, 1, 0, R_est*cos(theta_est)*delta, 0], \
@@ -42,8 +43,9 @@ def ctr(x, delta):
             [0, 0, 0, 1, 0], \
             [0, 0, 0, 0, 1]])
 
-    G = np.matrix([[delta**2/2*sin(theta_est), delta*cos(theta_est)],  \
-            [delta**2/2*cos(theta_est), delta*sin(theta_est)],  \
+
+    G = np.matrix([[-delta**2/2*sin(theta_est)*R_est, delta*cos(theta_est)*R_est],  \
+            [delta**2/2*cos(theta_est)*R_est, delta*sin(theta_est)*R_est],  \
             [delta**2/2, 0],  \
             [delta, 0],  \
             [0, delta]])

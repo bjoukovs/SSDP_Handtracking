@@ -14,6 +14,8 @@ from TargetFinder import TargetFinder
 from Kalman import IMM
 from math import sin, cos
 
+colors = ['b', 'g', 'orange']
+
 class TrackerApp(Frame):
 
     def __init__(self, mainFrame, filter):
@@ -28,10 +30,12 @@ class TrackerApp(Frame):
         self.outCanvas.get_tk_widget().pack(side=TOP,fill=BOTH,expand=False)
 
         self.outFigure.get_axes()[0].get_xaxis().set_visible(False)
-        self.outFigure.get_axes()[0].get_yaxis().set_visible(False) 
+        self.outFigure.get_axes()[0].get_yaxis().set_visible(False)
+        self.outFigure.get_axes()[0].set_xlim(0,500)
+        self.outFigure.get_axes()[0].set_ylim(500,0)
         self.outPlot.axis('off')
 
-        self.infoLabel = self.outPlot.text(0.05,0.9,"Label")
+        self.infoLabel = self.outPlot.text(10,10,"Label")
 
         self.infoLabelText = "Initializing..."
 
@@ -110,23 +114,27 @@ class TrackerApp(Frame):
 
             #Finding the target
             x,y = self.targetFinder.findTarget(thr)
-            rect2 = Rectangle((x,y),5,5,linewidth=1,edgecolor='r',facecolor='none')
-            self.imPlot2.add_patch(rect2)
+            #rect2 = Rectangle((x,y),5,5,linewidth=1,edgecolor='r',facecolor='none')
+            #self.imPlot2.add_patch(rect2)
 
 
             #Apply filtering
             s, p = self.filter.compute(x,y, delta)
 
-            self.trackerAppThread.setInfoText(np.array2string(p))
+            for i, state in enumerate(s):
+                r = Rectangle((state[0], state[1]), 5, 5, linewidth=1, edgecolor=colors[i], facecolor='none')
+                self.imPlot2.add_patch(r)
+                self.imPlot2.text(state[0], state[1], str(i))
 
-            #rect3 = Rectangle((s[0][0], s[1][0]),5,5,linewidth=1,edgecolor='b',facecolor='none')
-            #nx = s[0][0]
-            #ny = s[1][0]
-            #r = s[4][0]
-            #theta = s[2][0]
-            #circle = Circle((nx - r*cos(theta), ny - r*sin(theta)), radius = r, linewidth=1, edgecolor='b', facecolor='none')
-            #self.imPlot2.add_patch(rect3)
-            #self.imPlot2.add_patch(circle)
+            self.trackerAppThread.setInfoText(str(np.argmax(p)))
+
+            if np.argmax(p)==2:
+                nx = s[2][0]
+                ny = s[2][1]
+                r = s[2][4]
+                theta = s[2][2]
+                #circle = Circle((nx - r*cos(theta), ny - r*sin(theta)), radius = r, linewidth=1, edgecolor='b', facecolor='none')
+                #self.outPlot.add_patch(circle)
             
 
             #Update plots

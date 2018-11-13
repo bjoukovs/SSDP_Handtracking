@@ -37,7 +37,7 @@ CTR_QN = np.eye(2)*CTR_sigma_n
 #Only noise
 VOID_sigma_n = 0
 
-VOID_F = np.ones((2,2))
+VOID_F = np.eye(2)
 VOID_QW = np.eye(2)
 
 VOID_H = np.eye(2)

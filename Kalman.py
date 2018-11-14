@@ -18,7 +18,7 @@ def predict(s, Q, model, delta):
         QW = CTR_QW
 
     if model == MODEL_VOID:
-        F,G = VOID_F,np.eye(2)
+        F,G = LinearModels.no_object(s, delta)
         QW = VOID_QW
         
 

@@ -13,7 +13,7 @@ MODEL_CTR = 2
 # Definition of some of the model properties (w = process noise, n = measurement noise)
 
 #Constant velocity straight
-CVS_sigma_w = 6
+CVS_sigma_w = 5
 CVS_sigma_n = 1
 CVS_QW = np.eye(2)*CVS_sigma_w
 
@@ -35,7 +35,7 @@ CTR_H[1][1] = 1
 CTR_QN = np.eye(2)*CTR_sigma_n
 
 #Only noise
-VOID_sigma_n = 0
+VOID_sigma_n = 10
 
 VOID_F = np.eye(2)
 VOID_QW = np.eye(2)

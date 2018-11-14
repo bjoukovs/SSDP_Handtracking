@@ -54,5 +54,8 @@ def ctr(x, delta):
 
 
 #Object absent : Only noise
-def no_object():
-    pass
+def no_object(x, delta):
+    F = VOID_F
+    G = np.eye(2)*delta**2/2
+
+    return F,G

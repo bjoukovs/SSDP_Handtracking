@@ -2,7 +2,7 @@ from tkinter import *
 from Camstream import Camstream
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.patches import Rectangle, Circle
+from matplotlib.patches import Rectangle, Circle, ConnectionPatch, Arrow
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import cv2
@@ -12,7 +12,7 @@ import time
 from threading import Thread
 from TargetFinder import TargetFinder
 from Kalman import IMM
-from math import sin, cos
+from math import sin, cos, sqrt, atan2
 
 colors = ['b', 'g', 'orange']
 
@@ -25,15 +25,17 @@ class TrackerApp(Frame):
 
         #Initialize output graph
         self.outFigure = Figure(figsize=(8,6), dpi=100)
-        self.outPlot = self.outFigure.add_axes([0,0,1,1])
+        self.outPlot = self.outFigure.add_axes([0.05,0.05,0.9,0.9])
         self.outCanvas = FigureCanvasTkAgg(self.outFigure, self)
         self.outCanvas.get_tk_widget().pack(side=TOP,fill=BOTH,expand=False)
 
-        self.outFigure.get_axes()[0].get_xaxis().set_visible(False)
-        self.outFigure.get_axes()[0].get_yaxis().set_visible(False)
-        self.outFigure.get_axes()[0].set_xlim(0,500)
-        self.outFigure.get_axes()[0].set_ylim(500,0)
-        self.outPlot.axis('off')
+        #self.outFigure.get_axes()[0].get_xaxis().set_visible(False)
+        #self.outFigure.get_axes()[0].get_yaxis().set_visible(False)
+        self.outFigure.get_axes()[0].set_xlim(150,0)
+        self.outFigure.get_axes()[0].set_ylim(150,0)
+        #self.outPlot.axis('off')
+
+        self.outputPlotGraphics = OutputPlotGraphics(self.outPlot)
 
         self.infoLabel = self.outPlot.text(10,10,"Label")
 
@@ -66,7 +68,7 @@ class TrackerApp(Frame):
         self.camstream = Camstream(self)
 
         #initialize draw thread
-        self.trackerAppThread = TrackerAppThread(self.imPlot, self.imPlot2, self.imCanvas, self.outCanvas ,self.infoLabel)
+        self.trackerAppThread = TrackerAppThread(self, self.imPlot, self.imPlot2, self.imCanvas, self.outCanvas, self.outPlot, self.infoLabel)
         
 
 
@@ -142,6 +144,30 @@ class TrackerApp(Frame):
             #Update plots
             self.trackerAppThread.setImages(img_backup, thr)
 
+            #measurement
+            self.outputPlotGraphics.setMeasurement(x,y)
+
+            #state
+            n = np.argmax(p)
+            self.outputPlotGraphics.setModel(np.argmax(p))
+
+            if n != 0:
+                self.outputPlotGraphics.setSpeed(s[n][0], s[n][1], s[n][2], s[n][3])
+                self.outputPlotGraphics.setState(s[n][0], s[n][1])
+
+                if n==1:
+                    self.outputPlotGraphics.setLine(s[n][0], s[n][1])
+                if n==2:
+                    R = sqrt(s[n][2]**2 + s[n][3]**2)/s[n][4]
+                    theta = atan2(s[n][3], s[n][2])
+                    x0 = s[n][0] - R*cos(theta)
+                    y0 = s[n][1] - R*sin(theta)
+                    print(s[n][4])
+                    self.outputPlotGraphics.setCircle(x0, y0, R)
+            
+
+
+
 
     def closeCam(self):
         self.camstream.closeStream()
@@ -152,13 +178,15 @@ class TrackerApp(Frame):
 
 class TrackerAppThread(Thread):
 
-    def __init__(self, sourcePlot, outputPlot, canvas, outCanvas, label):
+    def __init__(self, camview, sourcePlot, outputPlot, canvas, outCanvas, outPlot, label):
         self.sourcePlot = sourcePlot
         self.outputPlot = outputPlot
         self.isRunning = False
         self.canvas = canvas
         self.label = label
         self.outCanvas = outCanvas
+        self.outPlot = outPlot
+        self.camview = camview
         
         self.infoText = "Init..."
 
@@ -205,18 +233,101 @@ class TrackerAppThread(Thread):
                 self.outputPlot.axis('off')
 
             self.canvas.draw()
-
+            
+            #self.outPlot.clear()
             self.label.set_text(self.infoText)
             self.outCanvas.draw()
 
             now = time.time()
             fps = 1/(now-self.lastTime)
-            #print("PROCESSED FPS : {:d}     GUI FPS : {:d}".format(int(fps*self.framesDrawn), int(fps)))
+            print("PROCESSED FPS : {:d}     GUI FPS : {:d}".format(int(fps*self.framesDrawn), int(fps)))
             self.framesDrawn = 0
             self.lastTime = now
 
             time.sleep(0.001)
             
+
+
+class OutputPlotGraphics():
+
+    def __init__(self, outputPlot):
+
+        self.decayValue = 0
+
+        self.outputPlot = outputPlot
+
+        self.measurementPatch = Rectangle((0,0), 1, 1, linewidth=1, color='gray', facecolor='none')
+        self.statePatch = Circle((0,0), 1, facecolor='blue')
+        self.speedPatch = Arrow(0,0,3,3)
+        self.circlePatch = Circle((0,0),1, linewidth=1,color='red', facecolor='None')
+        self.linePatch = ConnectionPatch((0,0),(1,1), 'data')
+
+        self.model = 0
+        self.startLine = (0,0)
+        self.needToResetStartLine = True
+
+        self.outputPlot.add_patch(self.measurementPatch)
+        self.outputPlot.add_patch(self.statePatch)
+        self.outputPlot.add_patch(self.speedPatch)
+        self.outputPlot.add_patch(self.circlePatch)
+        self.outputPlot.add_patch(self.linePatch)
+
+        self.circlePatch.set_visible(False)
+        self.linePatch.set_visible(False)
+
+    def setModel(self, model):
+
+        if model != self.model:
+            self.decayValue = 10
+        elif self.decayValue>0:
+            self.decayValue -= 1
+
+            if self.decayValue == 5:
+                self.needToResetStartLine = True
+
+        self.model = model
+
+        if self.decayValue <= 0:
+            if model==0:
+                self.speedPatch.set_visible(False)
+                self.linePatch.set_visible(False)
+                self.circlePatch.set_visible(False)
+
+            if model==1:
+                self.speedPatch.set_visible(True)
+                self.linePatch.set_visible(True)
+                self.circlePatch.set_visible(False)
+
+            if model==2:
+                self.speedPatch.set_visible(True)
+                self.linePatch.set_visible(False)
+                self.circlePatch.set_visible(True)
+
+    def setState(self,x,y):
+        self.statePatch.center = x, y
+
+    def setMeasurement(self,x,y):
+        self.measurementPatch.set_xy((x,y))
+
+    def setSpeed(self, x, y, vx, vy):
+        self.speedPatch.remove()
+        self.speedPatch = Arrow(x,y, vx/10, vy/10)
+        self.outputPlot.add_patch(self.speedPatch)
+
+    def setCircle(self, x, y, R):
+        self.circlePatch.set_radius(R)
+        self.circlePatch.center = x,y
+
+    def setLine(self, x, y):
+
+        """ if self.needToResetStartLine:
+            self.needToResetStartLine = False
+            self.startLine = (x,y)
+
+        self.linePatch.remove()
+        self.linePatch = ConnectionPatch((self.startLine[0],self.startLine[1]), (x+1, y+1), 'data')
+        self.outputPlot.add_patch(self.linePatch) """
+        pass
 
             
                 

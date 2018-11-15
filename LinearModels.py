@@ -33,7 +33,7 @@ def ctr(x, delta):
     # x = [x y theta omega R]
     # delta = Time delay
 
-    theta_est = x[2][0]
+    """ theta_est = x[2][0]
     omega_est = x[3][0]
     R_est = x[4][0]
     
@@ -50,7 +50,35 @@ def ctr(x, delta):
             [delta, 0],  \
             [0, delta]])
 
-    return F,G
+    return F,G """
+
+    # x = [x y vx vy omega]
+    vx_est = x[2][0]
+    vy_est = x[3][0]
+    omega_est = x[4][0]
+
+    if omega_est==0: omega_est = 0.0001
+
+    si = sin(omega_est*delta)
+    co = cos(omega_est*delta)
+
+
+    F = np.matrix( [[1, 0, si/omega_est, (co-1)/omega_est, 0], \
+                [0, 1, (1-co)/omega_est, si/omega_est, 0], \
+                [0, 0, co, -si, 0], \
+                [0, 0, si, co, 0],\
+                [0, 0, 0, 0, 1]]  )
+        
+    G = np.matrix( [[delta**2/2, 0, delta**2/2] ,\
+                [0, delta**2/2, delta**2/2],
+                [delta, 0, delta],
+                [0, delta, delta],
+                [0, 0, delta]])
+    
+    return F, G
+
+
+
 
 
 #Object absent : Only noise

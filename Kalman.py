@@ -70,22 +70,11 @@ class IMM:
     def __init__(self):
 
         self.nModels = 3
-
-        #States and covariances initialization
         self.states = []
-        self.states.append(np.zeros((2,1))) # 0 = VOID
-
         self.covariances = []
-        self.covariances.append(np.eye(2)) #0 = VOID
 
-        for i in range(self.nModels-1):
-            s, Q = TRANS_FUNC[0][i+1](self.states[0], self.covariances[0])
-            self.states.append(s)
-            self.covariances.append(Q)
-
-        # Log-Likelihoods
-        self.likelihoods = np.zeros((3,1))
-        self.p = np.ones((self.nModels, 1))/self.nModels
+        self.resetState(0,0)
+        
 
 
 
@@ -133,20 +122,45 @@ class IMM:
         Qfm = []
 
         for i in range(self.nModels):
-            sfm.append(np.zeros(self.states[i].shape))
-            Qfm.append(np.zeros(self.covariances[i].shape))
-            
-            for j in range(self.nModels):
-                #Call transition function
-                s, Q = TRANS_FUNC[j][i](self.states[j], self.covariances[j])
-                
-                #Mixing
-                sfm[i] = sfm[i] + s * TRANS[i][j] * self.p[j]
-                Qfm[i] = Qfm[i] + np.asarray(Q + s * s.transpose()) * TRANS[i][j] * self.p[j]
 
-            sfm[i] = sfm[i]/pm[i]
-            Qfm[i] = Qfm[i]/pm[i] - matmul(sfm[i], sfm[i].transpose())
+            if pm[i] > 0.000001:
+                sfm.append(np.zeros(self.states[i].shape))
+                Qfm.append(np.zeros(self.covariances[i].shape))
+                
+                for j in range(self.nModels):
+                    #Call transition function
+                    s, Q = TRANS_FUNC[j][i](self.states[j], self.covariances[j])
+                    
+                    #Mixing
+                    sfm[i] = sfm[i] + s * TRANS[i][j] * self.p[j]
+                    Qfm[i] = Qfm[i] + np.asarray(Q + s * s.transpose()) * TRANS[i][j] * self.p[j]
+
+                sfm[i] = sfm[i]/pm[i]
+                Qfm[i] = Qfm[i]/pm[i] - matmul(sfm[i], sfm[i].transpose())
+
+            else:
+                sfm[i] = self.states[i]
+                Qfm[i] = self.covariances[i]
 
         return sfm, Qfm, pm
+
+
+    def resetState(self, x, y):
+        
+        #States and covariances initialization
+        self.states = []
+        self.states.append(np.asarray(np.matrix([[x],[y]]))) # 0 = VOID
+
+        self.covariances = []
+        self.covariances.append(np.eye(2)) #0 = VOID
+
+        for i in range(self.nModels-1):
+            s, Q = TRANS_FUNC[0][i+1](self.states[0], self.covariances[0])
+            self.states.append(s)
+            self.covariances.append(Q)
+
+        # Log-Likelihoods
+        self.likelihoods = np.zeros((3,1))
+        self.p = np.ones((self.nModels, 1))/self.nModels
  
 

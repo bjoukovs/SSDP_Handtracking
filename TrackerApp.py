@@ -50,6 +50,7 @@ class TrackerApp(Frame):
         self.frames = 0
         self.dtreshold = 0
         self.voidPrior = None
+        self.objectlostcounter = 0
 
         #set filter (particle, kalman)
         self.filter = filter
@@ -128,13 +129,14 @@ class TrackerApp(Frame):
 
             self.trackerAppThread.setInfoText(str(np.argmax(p)))
 
-            if np.argmax(p)==2:
-                nx = s[2][0]
-                ny = s[2][1]
-                r = s[2][4]
-                theta = s[2][2]
-                #circle = Circle((nx - r*cos(theta), ny - r*sin(theta)), radius = r, linewidth=1, edgecolor='b', facecolor='none')
-                #self.outPlot.add_patch(circle)
+            if np.argmax(p)==0:
+                self.objectlostcounter += 1
+                if self.objectlostcounter >= 50:
+                    self.objectlostcounter = 0
+                    self.filter.resetState(x, y)
+                    print("filter reset")
+            else:
+                self.objectlostcounter = 0
             
 
             #Update plots

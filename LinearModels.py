@@ -87,3 +87,6 @@ def no_object(x, delta):
     G = np.eye(2)*delta**2/2
 
     return F,G
+
+
+MODEL_FUNC = [LinearModels.no_object, LinearModels.cvs, LinearModels.ctr]

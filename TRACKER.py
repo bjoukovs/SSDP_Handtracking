@@ -1,7 +1,8 @@
 from tkinter import *
 from TrackerApp import TrackerApp
 import threading
-from Kalman import IMM
+from Kalman import KalmanIMM
+from Particle import ParticleIMM
 
 class GUI(Frame):
 
@@ -32,5 +33,5 @@ class GUI(Frame):
 
 
 #Setting the filter to use
-filter = IMM()
+filter = ParticleIMM()
 GUI(filter)

@@ -65,7 +65,7 @@ def update(s, z, Q, model, delta):
 
 
 
-class IMM:
+class KalmanIMM:
 
     def __init__(self):
 

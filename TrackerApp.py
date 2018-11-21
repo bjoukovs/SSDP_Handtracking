@@ -11,7 +11,7 @@ import numpy as np
 import time
 from threading import Thread
 from TargetFinder import TargetFinder
-from Kalman import IMM
+from Kalman import KalmanIMM
 from math import sin, cos, sqrt, atan2
 
 colors = ['b', 'g', 'orange']
@@ -125,9 +125,10 @@ class TrackerApp(Frame):
             s, p = self.filter.compute(x,y, delta)
 
             for i, state in enumerate(s):
-                r = Rectangle((state[0], state[1]), 5, 5, linewidth=1, edgecolor=colors[i], facecolor='none')
+                #print(state[0][0], state[1][0])
+                r = Rectangle((state[0][0], state[1][0]), 5, 5, linewidth=1, edgecolor=colors[i], facecolor='none')
                 self.imPlot2.add_patch(r)
-                self.imPlot2.text(state[0], state[1], str(i))
+                self.imPlot2.text(state[0][0], state[1][0], str(i))
 
             self.trackerAppThread.setInfoText(str(np.argmax(p)))
 
@@ -160,9 +161,9 @@ class TrackerApp(Frame):
                 if n==2:
                     R = sqrt(s[n][2]**2 + s[n][3]**2)/s[n][4]
                     theta = atan2(s[n][3], s[n][2])
-                    x0 = s[n][0] - R*cos(theta)
-                    y0 = s[n][1] - R*sin(theta)
-                    print(s[n][4])
+                    x0 = s[n][0] + R*cos(theta)
+                    y0 = s[n][1] + R*sin(theta)
+                    #print(s[n][4])
                     self.outputPlotGraphics.setCircle(x0, y0, R)
             
 
@@ -301,7 +302,7 @@ class OutputPlotGraphics():
             if model==2:
                 self.speedPatch.set_visible(True)
                 self.linePatch.set_visible(False)
-                self.circlePatch.set_visible(True)
+                #self.circlePatch.set_visible(True)
 
     def setState(self,x,y):
         self.statePatch.center = x, y

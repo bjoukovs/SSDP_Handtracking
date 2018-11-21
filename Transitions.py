@@ -2,7 +2,7 @@ import numpy as np
 from math import cos, sin, asin, acos, sqrt
 
 VMAX = 400
-OMEGAMAX = 12
+OMEGAMAX = 16
 
 def cvs2ctr(s, Q):
     s = np.asarray(s)
@@ -28,7 +28,7 @@ def cvs2ctr(s, Q):
     s2[1] = s[1]
     s2[2] = s[2]
     s2[3] = s[3]
-    s2[4] = 0
+    s2[4] = -6
 
     Q2 = np.eye(5)
     Q2[0][0] = Q[0][0]
@@ -133,7 +133,7 @@ def void2ctr(s,Q):
     s2[1] = s[1]
     s2[2] = 0
     s2[3] = 0
-    s2[4] = 0
+    s2[4] = -6
 
     Q2 = np.eye(5)
     Q2[0][0] = Q[0][0]

@@ -140,6 +140,7 @@ class TrackerApp(Frame):
                     print("filter reset")
             else:
                 self.objectlostcounter = 0
+                print(s[1][2][0], s[1][3][0])
             
 
             #Update plots

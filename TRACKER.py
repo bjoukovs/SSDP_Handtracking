@@ -34,4 +34,5 @@ class GUI(Frame):
 
 #Setting the filter to use
 filter = ParticleIMM()
+#filter = KalmanIMM()
 GUI(filter)

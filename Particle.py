@@ -86,17 +86,15 @@ class ParticleIMM:
 
     def mix(self, delta):
 
-        #Modes probability
-        pm = matmul(TRANS, self.p)
-        pm = pm/np.sum(pm)
-        pm = [pm[i][0] for i in range(self.nmodels)]
-
         #Initialize new states array
         newstates = []
         for m in range(self.nmodels):
             newstates.append([])
 
         for m in range(self.nmodels):
+
+            #Mode change probabilities
+            pm = [TRANS[m][j] for j in range(self.nmodels)]
 
             #New modes for these particles
             newmodes = np.random.choice(range(self.nmodels), len(self.states[m]), p=pm, replace=True)

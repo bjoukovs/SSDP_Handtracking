@@ -36,7 +36,7 @@ class ParticleIMM:
             
             for i in range(ppstate):
                 #Get particle for model from the initial state
-                s, _ = TRANS_FUNC[0][m](initialState, np.zeros((2,2)))  
+                s = TRANS_FUNC_P[0][m](initialState)  
 
                 #Adding randomness
                 if m==MODEL_VOID:
@@ -99,14 +99,11 @@ class ParticleIMM:
             #New modes for these particles
             newmodes = np.random.choice(range(self.nmodels), len(self.states[m]), p=pm, replace=True)
 
-            #Dummy Q matrix
-            Qdummy = np.zeros((MODEL_STATESIZE[m], MODEL_STATESIZE[m]))
-
             #Browse particles of mode m, make a prediction with a probabilistic mode change
             for i in range(len(self.states[m])):
                 
                 #Transform the state if mode change
-                s, _ = TRANS_FUNC[m][newmodes[i]](self.states[m][i], Qdummy)
+                s = TRANS_FUNC_P[m][newmodes[i]](self.states[m][i])
 
                 newstates[newmodes[i]].append(s)
                 #print(s)
@@ -129,7 +126,7 @@ class ParticleIMM:
                     F, G = MODEL_FUNC[m](self.states[m][i], delta)
 
                 #Getting process noise
-                noise = np.random.randn(MODEL_NOISESIZE[m], 1)# * MODEL_SIGMAW[m]
+                noise = np.random.randn(MODEL_NOISESIZE[m], 1) * MODEL_SIGMAW[m] * 40
 
                 self.states[m][i] = np.asarray(matmul(F, self.states[m][i]) + matmul(G, noise))
 

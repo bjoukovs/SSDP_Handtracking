@@ -28,6 +28,7 @@ def cvs2ctr(s, Q):
     s2[1] = s[1]
     s2[2] = s[2]
     s2[3] = s[3]
+    #s2[4] = np.random.randn(1,1)*10
     s2[4] = -6
 
     Q2 = np.eye(5)

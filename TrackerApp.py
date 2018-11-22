@@ -130,7 +130,7 @@ class TrackerApp(Frame):
                 self.imPlot2.add_patch(r)
                 self.imPlot2.text(state[0][0], state[1][0], str(i))
 
-            self.trackerAppThread.setInfoText(str(np.argmax(p)))
+            self.trackerAppThread.setInfoText(str(np.argmax(p)) + str(p))
 
             if np.argmax(p)==0:
                 self.objectlostcounter += 1
@@ -140,7 +140,9 @@ class TrackerApp(Frame):
                     print("filter reset")
             else:
                 self.objectlostcounter = 0
-                print(s[1][2][0], s[1][3][0])
+            
+            if np.argmax(p)==2:
+                print(s[2][4])
             
 
             #Update plots

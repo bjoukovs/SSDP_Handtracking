@@ -1,6 +1,7 @@
 import LinearModels
 import numpy as np
 import Transitions
+import Transitions_particle
 import LinearModels
 
 
@@ -20,8 +21,8 @@ CVS_QN = np.eye(2)*CVS_sigma_n
 CVS_PARTCLE_UNCERTAINTY = np.zeros((4,1))
 CVS_PARTCLE_UNCERTAINTY[0][0] = 100
 CVS_PARTCLE_UNCERTAINTY[1][0] = 100
-CVS_PARTCLE_UNCERTAINTY[2][0] = 100
-CVS_PARTCLE_UNCERTAINTY[3][0] = 100
+CVS_PARTCLE_UNCERTAINTY[2][0] = 80
+CVS_PARTCLE_UNCERTAINTY[3][0] = 80
 
 #Constant turn rate
 CTR_sigma_w = 0.3
@@ -37,8 +38,8 @@ CTR_QN = np.eye(2)*CTR_sigma_n
 CTR_PARTCLE_UNCERTAINTY = np.zeros((5,1))
 CTR_PARTCLE_UNCERTAINTY[0][0] = 100
 CTR_PARTCLE_UNCERTAINTY[1][0] = 100
-CTR_PARTCLE_UNCERTAINTY[2][0] = 100
-CTR_PARTCLE_UNCERTAINTY[3][0] = 100
+CTR_PARTCLE_UNCERTAINTY[2][0] = 80
+CTR_PARTCLE_UNCERTAINTY[3][0] = 80
 CTR_PARTCLE_UNCERTAINTY[4][0] = 10
 
 #Noise - Stationnary
@@ -62,18 +63,22 @@ TRANS_FUNC = [[Transitions.identity, Transitions.void2cvs, Transitions.void2ctr]
             [Transitions.cvs2void, Transitions.identity, Transitions.cvs2ctr], \
             [Transitions.ctr2void, Transitions.ctr2cvs, Transitions.identity]]
 
+TRANS_FUNC_P = [[Transitions_particle.identity, Transitions_particle.void2cvs, Transitions_particle.void2ctr], \
+            [Transitions_particle.cvs2void, Transitions_particle.identity, Transitions_particle.cvs2ctr], \
+            [Transitions_particle.ctr2void, Transitions_particle.ctr2cvs, Transitions_particle.identity]]
+
 
 P_VOID2VOID = 0.9
 P_VOID2CVS = 0.05
 P_VOID2CTR = 0.05
 
 P_CTR2CTR = 0.96
-P_CTR2CVS = 0.039
-P_CTR2VOID = 0.001
+P_CTR2CVS = 0.03
+P_CTR2VOID = 0.01
 
 P_CVS2CVS = 0.98
-P_CVS2CTR = 0.019
-P_CVS2VOID = 0.001
+P_CVS2CTR = 0.01
+P_CVS2VOID = 0.01
 
 TRANS = np.asarray(np.matrix([[P_VOID2VOID, P_VOID2CVS, P_VOID2CTR], \
         [P_CVS2VOID, P_CVS2CVS, P_CVS2CTR], \

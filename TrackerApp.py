@@ -126,9 +126,9 @@ class TrackerApp(Frame):
 
             for i, state in enumerate(s):
                 #print(state[0][0], state[1][0])
-                r = Rectangle((state[0][0], state[1][0]), 5, 5, linewidth=1, edgecolor=colors[i], facecolor='none')
+                r = Rectangle((state[0], state[1]), 5, 5, linewidth=1, edgecolor=colors[i], facecolor='none')
                 self.imPlot2.add_patch(r)
-                self.imPlot2.text(state[0][0], state[1][0], str(i))
+                self.imPlot2.text(state[0], state[1], str(i))
 
             self.trackerAppThread.setInfoText(str(np.argmax(p)) + str(p))
 

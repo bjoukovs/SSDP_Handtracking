@@ -10,7 +10,7 @@ class ParticleIMM:
     def __init__(self, logger):
 
         self.nmodels = 3
-        self.nparticles = 900
+        self.nparticles = 1800
 
         self.states = []
 

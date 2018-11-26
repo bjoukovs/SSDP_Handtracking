@@ -6,11 +6,10 @@ from matplotlib.patches import Rectangle, Circle, ConnectionPatch, Arrow
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import cv2
-from MatchFilter import MatchFilter
+from MatchFilter import MatchFilter, TargetFinder
 import numpy as np
 import time
 from threading import Thread
-from TargetFinder import TargetFinder
 from Kalman import KalmanIMM
 from math import sin, cos, sqrt, atan2
 

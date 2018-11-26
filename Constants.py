@@ -94,5 +94,6 @@ MODEL_CTR = 2
 MODEL_H = [VOID_H, CVS_H, CTR_H]
 MODEL_varN = [VOID_var_n, CVS_var_n, CTR_var_n]
 MODEL_varW = [VOID_var_w, CVS_var_w, CTR_var_w]
+MODEL_QN = [VOID_QN, CVS_QN, CTR_QN]
 MODEL_STATESIZE = [2, 4, 5]
 MODEL_NOISESIZE = [2, 2, 3]

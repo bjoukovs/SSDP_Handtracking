@@ -1,17 +1,20 @@
 import numpy as np
 from numpy import matmul
+from numpy import matlib
 from Constants import *
 from LinearModels import MODEL_FUNC
-from math import sqrt
+from math import sqrt, pi
 
 class ParticleIMM:
 
-    def __init__(self):
+    def __init__(self, logger):
 
         self.nmodels = 3
-        self.nparticles = 1800
+        self.nparticles = 900
 
         self.states = []
+
+        self.logger = logger
         
         self.resetState(100,100)
 
@@ -81,6 +84,13 @@ class ParticleIMM:
                 means.append(np.zeros((MODEL_STATESIZE[m], 1)))
 
             
+        if self.logger is not None:
+            for m in range(self.nmodels):
+                self.logger.write('means'+str(m), means[m])
+                self.logger.write('std'+str(m), np.std(self.states[m], axis=1))
+
+            self.logger.write('p', self.p)
+            self.logger.write('meas', [x, y, delta])
 
         return means, self.p
         #return self.maxstates, self.p
@@ -162,7 +172,11 @@ class ParticleIMM:
             var_n = MODEL_varN[m]
 
             if self.states[m].shape[1]>0:
-                logliks = np.sum( - np.power(z - matmul(H, self.states[m]), 2) /2 /var_n, axis=0)
+                z_tilde = -matmul(MODEL_H[m], self.states[m]) + matlib.repmat(z, 1, self.states[m].shape[1])
+                Qn_inv = np.linalg.inv(MODEL_QN[m])
+                detQ = np.linalg.det(MODEL_QN[m])
+                logliks = np.log(1/sqrt(pi**2*detQ))-0.5*np.sum(z_tilde * matmul(Qn_inv, z_tilde), axis=0)
+                #logliks = np.sum( - np.power(z - matmul(H, self.states[m]), 2) /2 /var_n, axis=0)
 
             #for i in range(self.states[m].shape[1]):
                 
@@ -201,7 +215,6 @@ class ParticleIMM:
             #print(prob[m])
             newstateslist = np.random.choice(self.states[m].shape[1], nstatesinmodel, replace=True, p=prob[m])
             #self.states[m] = [self.states[m][k] for k in newstateslist]
-            #print(newstateslist)
             #print(self.states[m][:,newstateslist])
             self.states[m] = self.states[m][:,newstateslist]
 

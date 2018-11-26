@@ -3,6 +3,7 @@ from TrackerApp import TrackerApp
 import threading
 from Kalman import KalmanIMM
 from Particle import ParticleIMM
+from Logger import Logger
 
 class GUI(Frame):
 
@@ -32,7 +33,7 @@ class GUI(Frame):
 
 
 
-#Setting the filter to use
-filter = ParticleIMM()
-#filter = KalmanIMM()
+#Setting the filter to use, use None if you don't want to log the data
+filter = ParticleIMM(Logger())
+#filter = KalmanIMM(Logger())
 GUI(filter)

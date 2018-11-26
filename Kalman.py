@@ -67,11 +67,14 @@ def update(s, z, Q, model, delta):
 
 class KalmanIMM:
 
-    def __init__(self):
+    def __init__(self, logger):
 
         self.nModels = 3
         self.states = []
         self.covariances = []
+
+        #Logging file
+        self.logger = logger
 
         self.resetState(0,0)
         
@@ -110,6 +113,14 @@ class KalmanIMM:
 
         #self.s = s
         #self.Q = Q
+
+        if self.logger is not None:
+            for m in range(self.nModels):
+                self.logger.write('states'+str(m), self.states[m])
+                self.logger.write('covar'+str(m), self.covariances[m])
+                
+            self.logger.write('p', self.p)
+            self.logger.write('meas', [x, y, delta])
 
         return self.states, self.p
 

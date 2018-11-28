@@ -17,6 +17,10 @@ colors = ['b', 'g', 'orange']
 
 class TrackerApp(Frame):
 
+    '''
+    Class that manages the tracking process. Receives video frames, performs image filtering and Kalman or Particle filtering
+    '''
+
     def __init__(self, mainFrame, filter):
         super().__init__(mainFrame)
 
@@ -28,11 +32,8 @@ class TrackerApp(Frame):
         self.outCanvas = FigureCanvasTkAgg(self.outFigure, self)
         self.outCanvas.get_tk_widget().pack(side=TOP,fill=BOTH,expand=False)
 
-        #self.outFigure.get_axes()[0].get_xaxis().set_visible(False)
-        #self.outFigure.get_axes()[0].get_yaxis().set_visible(False)
         self.outFigure.get_axes()[0].set_xlim(150,0)
         self.outFigure.get_axes()[0].set_ylim(150,0)
-        #self.outPlot.axis('off')
 
         self.outputPlotGraphics = OutputPlotGraphics(self.outPlot)
 
@@ -40,7 +41,7 @@ class TrackerApp(Frame):
 
         self.infoLabelText = "Initializing..."
 
-        #initialize matplotlib figure for image
+        #initialize matplotlib figure for webcam video display
         self.imFigure = Figure(figsize=(8,2), dpi=100)
         self.imPlot = self.imFigure.add_subplot(121)
         self.imPlot2 = self.imFigure.add_subplot(122)
@@ -104,10 +105,6 @@ class TrackerApp(Frame):
             else:
                 self.voidPrior += correlated
 
-            if self.frames == 10:
-                #self.voidPrior /= 10
-                #minv, maxv, minloc, maxloc = cv2.minMaxLoc(source)
-                pass
 
         else:
 
@@ -116,21 +113,25 @@ class TrackerApp(Frame):
 
             #Finding the target
             x,y = self.targetFinder.findTarget(thr)
+
             #rect2 = Rectangle((x,y),5,5,linewidth=1,edgecolor='r',facecolor='none')
             #self.imPlot2.add_patch(rect2)
 
 
-            #Apply filtering
+            #Apply filtering (Kalman or Particle)
             s, p = self.filter.compute(x,y, delta)
 
+            #Plots the states output for each model on the video display
             for i, state in enumerate(s):
-                #print(state[0][0], state[1][0])
                 r = Rectangle((state[0], state[1]), 5, 5, linewidth=1, edgecolor=colors[i], facecolor='none')
                 self.imPlot2.add_patch(r)
                 self.imPlot2.text(state[0], state[1], str(i))
 
+                
+            #Output plot: most probable model and model probabilities
             self.trackerAppThread.setInfoText(str(np.argmax(p)) + str(p))
 
+            #The filter is reset if model 0 is detected for longer than 50 frames
             if np.argmax(p)==0:
                 self.objectlostcounter += 1
                 if self.objectlostcounter >= 50:
@@ -139,12 +140,10 @@ class TrackerApp(Frame):
                     print("filter reset")
             else:
                 self.objectlostcounter = 0
-            
-            if np.argmax(p)==2:
-                print(s[2][4])
-            
+                        
 
             #Update plots
+            #Video images
             self.trackerAppThread.setImages(img_backup, thr)
 
             #measurement
@@ -180,6 +179,11 @@ class TrackerApp(Frame):
 
 
 class TrackerAppThread(Thread):
+
+    '''
+    This thread manages the refreshing of the GUI display
+
+    '''
 
     def __init__(self, camview, sourcePlot, outputPlot, canvas, outCanvas, outPlot, label):
         self.sourcePlot = sourcePlot
@@ -237,7 +241,6 @@ class TrackerAppThread(Thread):
 
             self.canvas.draw()
             
-            #self.outPlot.clear()
             self.label.set_text(self.infoText)
             self.outCanvas.draw()
 
@@ -252,6 +255,11 @@ class TrackerAppThread(Thread):
 
 
 class OutputPlotGraphics():
+
+    ''' Class containing the output plot display behaviour: plotting the state and drawing the speed arrow
+
+        Can also plot other information on the graph such as a line that represents the target trajectory,
+        but these functions have been disabled to reduce display latency'''
 
     def __init__(self, outputPlot):
 

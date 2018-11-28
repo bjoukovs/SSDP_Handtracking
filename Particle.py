@@ -4,6 +4,12 @@ from numpy import matlib
 from Constants import *
 from LinearModels import MODEL_FUNC
 from math import sqrt, pi
+import time
+
+
+'''
+IMM Particle filter
+'''
 
 class ParticleIMM:
 
@@ -15,6 +21,9 @@ class ParticleIMM:
         self.states = []
 
         self.logger = logger
+
+        self.cputime = 0
+        self.steps=0
         
         self.resetState(100,100)
 
@@ -28,6 +37,7 @@ class ParticleIMM:
         self.maxstates = [[], [], []]
         self.p = np.ones((self.nmodels, 1))/self.nmodels
 
+        #Compute required number of particles per state
         ppstate = round(self.nparticles/self.nmodels)
 
         initialState = np.zeros((2,1))
@@ -36,11 +46,11 @@ class ParticleIMM:
 
         for m in range(self.nmodels):
 
-            #self.states.append([])
+            #Add a matrix to self.states. Each column is a particle
             self.states.append(np.zeros((MODEL_STATESIZE[m], ppstate)))
             
             for i in range(ppstate):
-                #Get particle for model from the initial state
+                #Transform initial particle depending on the model
                 s = TRANS_FUNC_P[0][m](initialState)  
 
                 #Adding randomness
@@ -52,15 +62,12 @@ class ParticleIMM:
                     noise = np.multiply(np.random.randn(5,1), CTR_PARTCLE_UNCERTAINTY)
 
                 s = s + noise
-                #self.states[m].append(s)
                 self.states[m][:,i] = s[:,0]
                 
 
 
-
-
-
     def compute(self, x, y, delta):
+        now = time.time()
         
         #Probabilistic mode change
         self.mix(delta)
@@ -71,19 +78,17 @@ class ParticleIMM:
         #Likelihoods
         self.likelihoodsAndNormalize(x, y)
 
+        #Computing o the means
         means = []
 
         for m in range(self.nmodels):
             if self.states[m].shape[1] > 0:
-                '''print(self.states[m][0])
-                print(self.states[m][1])
-                print(np.mean(self.states[m][0:1], axis=0))
-                print("______________________")'''
                 means.append(np.mean(self.states[m], axis=1))
             else:
                 means.append(np.zeros((MODEL_STATESIZE[m], 1)))
 
-            
+        
+        #Logging
         if self.logger is not None:
             for m in range(self.nmodels):
                 self.logger.write('means'+str(m), means[m])
@@ -92,12 +97,20 @@ class ParticleIMM:
             self.logger.write('p', self.p)
             self.logger.write('meas', [x, y, delta])
 
+        #CPU Time
+        comtime = time.time()-now
+        self.cputime += comtime
+        self.steps += 1
+        #print(self.cputime/self.steps)
+
         return means, self.p
         #return self.maxstates, self.p
 
 
 
     def mix(self, delta):
+
+        #Mixing step: operates a probabilistic mode change on the particles
 
         #Initialize new states array
         newstates = []
@@ -110,21 +123,18 @@ class ParticleIMM:
             pm = [TRANS[m][j] for j in range(self.nmodels)]
 
             #New modes for these particles
-            #newmodes = np.random.choice(range(self.nmodels), len(self.states[m]), p=pm, replace=True)
             newmodes = np.random.choice(range(self.nmodels), self.states[m].shape[1], p=pm, replace=True)
 
             #Browse particles of mode m, make a prediction with a probabilistic mode change
-            #for i in range(len(self.states[m])):
             for i in range(self.states[m].shape[1]):
                 
                 #Transform the state if mode change
-                #s = TRANS_FUNC_P[m][newmodes[i]](self.states[m][i])
                 s = TRANS_FUNC_P[m][newmodes[i]](np.expand_dims(self.states[m][:,i], axis=1))
 
                 newstates[newmodes[i]].append(s)
-                #print(s)
+
         
-        #self.states = newstates
+        #Saving the particles
         for m in range(self.nmodels):
             self.states[m] = np.concatenate(newstates[m], axis=1)
         
@@ -132,6 +142,8 @@ class ParticleIMM:
 
 
     def predict(self, delta):
+
+        #Prediction step
 
         for m in range(self.nmodels):
 
@@ -141,7 +153,7 @@ class ParticleIMM:
                 noise = np.random.randn(MODEL_NOISESIZE[m], self.states[m].shape[1]) * sqrt(MODEL_varW[m])*5
                 self.states[m] = np.asarray(matmul(F, self.states[m]) + matmul(G, noise))
 
-            #Special case of CTR
+            #Special case of CTR where a different F and G has to be computed for each particle
             else:
 
                 for i in range(self.states[m].shape[1]):
@@ -160,8 +172,12 @@ class ParticleIMM:
 
     def likelihoodsAndNormalize(self, x, y):
 
+        #The likelihood of each particle is normalised and the particle cloud is resampled, without taking the mode in consideration
+
+        #Measurements
         z = np.asarray(np.matrix([[x], [y]]))
 
+        #Array containing three vectors of particle probabilities (for each mode)
         prob = []
         
         for m in range(self.nmodels):
@@ -172,53 +188,46 @@ class ParticleIMM:
             var_n = MODEL_varN[m]
 
             if self.states[m].shape[1]>0:
+
+                #Computing log-likelihoods
+
                 z_tilde = -matmul(MODEL_H[m], self.states[m]) + matlib.repmat(z, 1, self.states[m].shape[1])
                 Qn_inv = np.linalg.inv(MODEL_QN[m])
                 detQ = np.linalg.det(MODEL_QN[m])
                 logliks = np.log(1/sqrt(pi**2*detQ))-0.5*np.sum(z_tilde * matmul(Qn_inv, z_tilde), axis=0)
-                #logliks = np.sum( - np.power(z - matmul(H, self.states[m]), 2) /2 /var_n, axis=0)
 
-            #for i in range(self.states[m].shape[1]):
-                
-                #logliks.append(   [np.sum( - np.power(z - matmul(H, self.states[m][i]), 2) /2 /var_n )]   )
-
-            #if len(logliks) > 0:
-                #logliks = np.asarray(np.matrix(logliks))
-
+                #Max loglikelihood
                 ml = max(logliks)
                 #print(ml)
 
+                #update of the model probability (requires normalization)
                 self.p[m] = np.sum(np.exp(logliks - ml))
                 
+                #particle weights
                 weights = np.exp(logliks - ml)
                 weights = (1/np.sum(weights))*weights
 
+                #get the maximum likelihood particle (if required)
                 mwidx = np.argmax(weights)
                 self.maxstates[m] = np.expand_dims(self.states[m][:,mwidx], axis=1)
 
-                #prob[m] = [weights[j][0] for j in range(len(weights))]
+                #Construction of an array of particle probabilities for resampling
                 prob[m] = [weights[j] for j in range(len(weights))]
 
             else:
                 prob[m] = 0
 
 
-
+        #Model probabilities normalization
         self.p = self.p/np.sum(self.p)
 
         #Resampling
         for m in range(self.nmodels):
 
             nstatesinmodel = int(round(self.nparticles*self.p[m][0]))
-
-            #resamplestates = np.zeros((MODEL_STATESIZE[m], ntatesinmodel))
-            #print(prob[m])
             newstateslist = np.random.choice(self.states[m].shape[1], nstatesinmodel, replace=True, p=prob[m])
-            #self.states[m] = [self.states[m][k] for k in newstateslist]
-            #print(self.states[m][:,newstateslist])
             self.states[m] = self.states[m][:,newstateslist]
 
-        #print(len(self.states[0]) + len(self.states[1]) + len(self.states[2]))
         
         
     

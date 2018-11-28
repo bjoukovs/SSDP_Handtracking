@@ -3,6 +3,10 @@ from math import cos, sin
 from Constants import *
 
 
+'''
+Definition of the models for the filters: each function returns F and G
+'''
+
 #Constant velocity straight line model
 def cvs(x, delta):
 
@@ -30,29 +34,9 @@ def cvs(x, delta):
 def ctr(x, delta):
 
     # Returns the linearized state update matrix
-    # x = [x y theta omega R]
     # delta = Time delay
-
-    """ theta_est = x[2][0]
-    omega_est = x[3][0]
-    R_est = x[4][0]
-    
-    F = np.matrix([[1, 0, 0, -R_est*sin(theta_est)*delta, 0], \
-            [0, 1, 0, R_est*cos(theta_est)*delta, 0], \
-            [0, 0, 1, delta, 0], \
-            [0, 0, 0, 1, 0], \
-            [0, 0, 0, 0, 1]])
-
-
-    G = np.matrix([[-delta**2/2*sin(theta_est)*R_est, delta*cos(theta_est)*R_est],  \
-            [delta**2/2*cos(theta_est)*R_est, delta*sin(theta_est)*R_est],  \
-            [delta**2/2, 0],  \
-            [delta, 0],  \
-            [0, delta]])
-
-    return F,G """
-
     # x = [x y vx vy omega]
+
     vx_est = x[2][0]
     vy_est = x[3][0]
     omega_est = x[4][0]

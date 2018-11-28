@@ -4,6 +4,11 @@ from numpy import matmul
 import numpy as np
 from math import pi, sqrt
 from numpy import exp
+import time
+
+'''
+Main IMM Kalman filter class. Contains the methods to mix, predict and update the states.
+'''
 
 
 def predict(s, Q, model, delta):
@@ -77,12 +82,17 @@ class KalmanIMM:
         self.logger = logger
 
         self.resetState(0,0)
+
+        self.cputime = 0
+        self.steps=0
         
 
 
 
     def compute(self, x, y, delta):
         #Function called when new measurement received
+        now = time.time()
+
         z = np.matrix([[x], [y]])
 
         #MIXING
@@ -101,19 +111,15 @@ class KalmanIMM:
             self.covariances[i] = np.asarray(Q)
             self.likelihoods[i] = l
             
+        #Update of the model probabilities
         plog = self.likelihoods + np.log(pm)
         plog = plog - np.max(plog)*np.ones(plog.shape)
 
         p = np.exp(plog)
         self.p = (1/np.sum(p))*p #normalizing
 
-        #prediction
-        #s, Q = predict(self.s, self.Q, MODEL_CTR, delta)
-        #s, Q = update(s, z, Q, MODEL_CTR, delta)
 
-        #self.s = s
-        #self.Q = Q
-
+        #Logging
         if self.logger is not None:
             for m in range(self.nModels):
                 self.logger.write('states'+str(m), self.states[m])
@@ -122,11 +128,20 @@ class KalmanIMM:
             self.logger.write('p', self.p)
             self.logger.write('meas', [x, y, delta])
 
+        #Measurement of the CPU time
+        comtime = time.time()-now
+        self.cputime += comtime
+        self.steps += 1
+        #print(self.cputime/self.steps)
+
+
         return self.states, self.p
 
 
 
     def mix(self):
+
+        #Mixing of the models (IMM)
 
         pm = matmul(TRANS, self.p)
         sfm = []

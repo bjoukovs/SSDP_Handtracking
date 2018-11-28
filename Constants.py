@@ -9,7 +9,7 @@ import LinearModels
 
 #Constant velocity straight
 CVS_var_w = 0.02
-CVS_var_n = 0.5
+CVS_var_n = 0.5*5
 CVS_QW = np.eye(2)*CVS_var_w
 
 CVS_H = np.zeros((2,4))
@@ -26,7 +26,7 @@ CVS_PARTCLE_UNCERTAINTY[3][0] = 80
 
 #Constant turn rate
 CTR_var_w = 0.3
-CTR_var_n = 1
+CTR_var_n = 1*5
 CTR_QW = np.eye(3)*CTR_var_w
 
 CTR_H = np.zeros((2,5))
@@ -44,7 +44,7 @@ CTR_PARTCLE_UNCERTAINTY[4][0] = 10
 
 #Noise - Stationnary
 VOID_var_w = 0.001
-VOID_var_n = 1
+VOID_var_n = 1*5
 
 
 VOID_F = np.eye(2)
@@ -85,12 +85,15 @@ TRANS = np.asarray(np.matrix([[P_VOID2VOID, P_VOID2CVS, P_VOID2CTR], \
         [P_CTR2VOID, P_CTR2CVS, P_CTR2CTR]]))
 
 # Definition of the model 
-# names
 
+
+#Names
 MODEL_VOID = 0
 MODEL_CVS = 1
 MODEL_CTR = 2
 
+
+#Functions and properties
 MODEL_H = [VOID_H, CVS_H, CTR_H]
 MODEL_varN = [VOID_var_n, CVS_var_n, CTR_var_n]
 MODEL_varW = [VOID_var_w, CVS_var_w, CTR_var_w]

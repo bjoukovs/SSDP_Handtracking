@@ -4,6 +4,10 @@ from math import cos, sin, asin, acos, sqrt
 VMAX = 400
 OMEGAMAX = 16
 
+'''
+Transition functions for the Particle filter. Avoids computing Q as in the Kalman case, and can use priors on state variables
+'''
+
 def cvs2ctr(s):
     s = np.asarray(s)
     

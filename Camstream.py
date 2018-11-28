@@ -5,6 +5,8 @@ from cv2 import CAP_PROP_FRAME_COUNT as CPFC
 
 class Camstream(Thread):
 
+    '''This thread manages the webcam stream and calls TrackerApp.updateImage when an image is available'''
+
     def __init__(self, camFrame):
         self.isRunning = False
         self.camFrame = camFrame
@@ -40,6 +42,7 @@ class Camstream(Thread):
                 delta = now - self.timer
                 self.timer = now
 
+                #Send image to TrackerApp
                 self.camFrame.updateImage(self.videoStream.getAvailableImage(), delta)
             else:
                 time.sleep(0.001)
@@ -55,12 +58,15 @@ class Camstream(Thread):
 
 class VideoStream(Thread):
 
+    '''
+    This thread also manages the video stream, buffers the video frame on a separate thread to avoid video latency'''
+
     def __init__(self):
         self.isRunning = False
         self.image = None
         self.available = False
 
-        #initializing video, 100x100
+        #initializing video
         self.cam = VideoCapture(0)
         self.cam.set(3,200)
         self.cam.set(4,200)

@@ -4,13 +4,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+'''
+Contains the methods performing the match filtering of the target
+'''
+
 class MatchFilter():
 
     def __init__(self):
 
         #self.target = matplotlib.image.imread('target.png')
         #self.target = matplotlib.image.imread('target_hblur.png')
-        #self.target = matplotlib.image.imread('righthand.png')
         self.target = matplotlib.image.imread('target4.png')
 
         self.target = cv2.cvtColor(self.target, cv2.COLOR_RGB2GRAY)
@@ -21,13 +24,6 @@ class MatchFilter():
 
         self.target = cv2.Laplacian(self.target, cv2.CV_8U)
         self.target = self.target.astype(np.float32)
-
-        #plt.imshow(self.target)
-        #plt.show()
-        print(self.target.shape)
-
-        #self.rh1_ft = np.fft.fft2(self.righthand1)
-        #transpose for correlation
 
     def correlate(self, image):
         return cv2.matchTemplate(image, self.target, cv2.TM_CCORR)
@@ -66,8 +62,6 @@ class TargetFinder():
 
         #Max position
         in_val, max_val, min_loc, max_loc = cv2.minMaxLoc(source)
-
-        #np.savetxt("foo.csv", verticalSum, delimiter=",")
 
         x = max_loc[0]
         y = max_loc[1]

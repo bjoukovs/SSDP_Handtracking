@@ -34,6 +34,8 @@ class GUI(Frame):
 
 
 #Setting the filter to use, use None if you don't want to log the data
-filter = ParticleIMM(Logger())
+#filter = ParticleIMM(Logger())
 #filter = KalmanIMM(Logger())
+#filter = ParticleIMM(None)
+filter = KalmanIMM(None)
 GUI(filter)
